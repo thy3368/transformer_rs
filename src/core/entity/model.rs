@@ -314,9 +314,9 @@ impl TransformerModel {
             grads[b + 8] = dw2;
             grads[b + 9] = dbf2;
             let mut dff = drelu;
-            for i in 0..dff.len() {
+            for (i, value) in dff.iter_mut().enumerate() {
                 if c.ff1[i] <= 0.0 {
-                    dff[i] = 0.0;
+                    *value = 0.0;
                 }
             }
             let n1 = layer_norm(

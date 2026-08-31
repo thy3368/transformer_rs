@@ -82,17 +82,17 @@ pub(crate) fn layer_norm_backward(
     for r in 0..rows {
         let mut sum = 0.0;
         let mut sum_x = 0.0;
-        for c in 0..cols {
+        for (c, &gamma_c) in gamma.iter().enumerate().take(cols) {
             let idx = r * cols + c;
-            let g = dy[idx] * gamma[c];
+            let g = dy[idx] * gamma_c;
             sum += g;
             sum_x += g * (x[idx] - means[r]) * inv[r];
             dg[c] += dy[idx] * (x[idx] - means[r]) * inv[r];
             db[c] += dy[idx];
         }
-        for c in 0..cols {
+        for (c, &gamma_c) in gamma.iter().enumerate().take(cols) {
             let idx = r * cols + c;
-            let g = dy[idx] * gamma[c];
+            let g = dy[idx] * gamma_c;
             let xn = (x[idx] - means[r]) * inv[r];
             dx[idx] = inv[r] * (g - (sum + xn * sum_x) / cols as f32);
         }

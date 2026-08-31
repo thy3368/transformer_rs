@@ -1,5 +1,5 @@
 use crate::core::entity::{
-    BOS_TOKEN, EOS_TOKEN, PAD_TOKEN, Text, TokenIds, Tokenizer, TokenizerConfig, TransformerError,
+    BOS_TOKEN, EOS_TOKEN, Text, TokenIds, Tokenizer, TokenizerConfig, TransformerError,
 };
 pub struct ByteLevelTokenizer;
 impl Tokenizer for ByteLevelTokenizer {
@@ -21,15 +21,7 @@ impl Tokenizer for ByteLevelTokenizer {
         let bytes: Vec<u8> = ids
             .0
             .iter()
-            .filter_map(|&id| {
-                if id < BOS_TOKEN {
-                    Some(id as u8)
-                } else if id == BOS_TOKEN || id == EOS_TOKEN || id == PAD_TOKEN {
-                    None
-                } else {
-                    None
-                }
-            })
+            .filter_map(|&id| if id < BOS_TOKEN { Some(id as u8) } else { None })
             .collect();
         Ok(Text(String::from_utf8_lossy(&bytes).into_owned()))
     }

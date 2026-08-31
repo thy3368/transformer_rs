@@ -74,7 +74,7 @@ impl ModelConfig {
                 "all dimensions must be positive and max_seq_len >= 2".into(),
             ));
         }
-        if self.d_model % self.num_heads != 0 {
+        if !self.d_model.is_multiple_of(self.num_heads) {
             return Err(TransformerError::InvalidConfig(
                 "d_model must be divisible by num_heads".into(),
             ));

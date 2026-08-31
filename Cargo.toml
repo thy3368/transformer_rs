@@ -1,0 +1,14 @@
+[package]
+name = "transformer_rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+bincode = "1.3"
+
+[dev-dependencies]
+tempfile = "3"
+rstest = "0.25"
