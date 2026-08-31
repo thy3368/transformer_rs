@@ -3,4 +3,4 @@ mod dataset;
 mod tokenizer;
 pub use checkpoint::BinaryCheckpointStore;
 pub use dataset::TextDatasetReader;
-pub use tokenizer::ByteLevelTokenizer;
+pub use tokenizer::{BpeTokenizer, BpeTokens, ByteLevelTokenizer};

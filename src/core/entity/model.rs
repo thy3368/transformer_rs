@@ -1,7 +1,7 @@
 use super::attention::causal_attention;
 use super::layers::{layer_norm, layer_norm_backward, linear, linear_backward};
 use super::{
-    Logits, ModelConfig, ModelSnapshot, ParameterSnapshot, Tensor, TokenizerConfig,
+    HiddenState, Logits, ModelConfig, ModelSnapshot, ParameterSnapshot, Tensor, TokenizerConfig,
     TransformerError,
 };
 use rand::rngs::StdRng;
@@ -142,6 +142,21 @@ impl TransformerModel {
     fn base(&self, l: usize) -> usize {
         1 + l * 12
     }
+    pub fn embed_token_ids(&self, ids: &[u32]) -> Result<HiddenState, TransformerError> {
+        if ids.iter().any(|&id| id as usize >= self.config.vocab_size) {
+            return Err(TransformerError::InvalidData(
+                "token outside vocabulary".into(),
+            ));
+        }
+        let d = self.config.d_model;
+        let embedding = &self.parameters[0].values;
+        let mut values = Vec::with_capacity(ids.len() * d);
+        for &id in ids {
+            let start = id as usize * d;
+            values.extend_from_slice(&embedding[start..start + d]);
+        }
+        Ok(HiddenState(Tensor::new(values, vec![ids.len(), d])?))
+    }
     pub fn forward(&self, ids: &[u32]) -> Result<ForwardOutput, TransformerError> {
         let s = ids.len();
         let d = self.config.d_model;
@@ -150,19 +165,13 @@ impl TransformerModel {
                 "sequence length outside model context".into(),
             ));
         }
-        if ids.iter().any(|&x| x as usize >= self.config.vocab_size) {
-            return Err(TransformerError::InvalidData(
-                "token outside vocabulary".into(),
-            ));
-        }
-        let emb = &self.parameters[0].values;
-        let mut x = vec![0.0; s * d];
+        let mut x = self.embed_token_ids(ids)?.0.data;
         let scale = (d as f32).sqrt();
         for r in 0..s {
             for c in 0..d {
                 let angle = r as f32 / 10000f32.powf((2 * (c / 2)) as f32 / d as f32);
                 let pe = if c % 2 == 0 { angle.sin() } else { angle.cos() };
-                x[r * d + c] = emb[ids[r] as usize * d + c] * scale + pe;
+                x[r * d + c] = x[r * d + c] * scale + pe;
             }
         }
         let mut caches = Vec::new();
@@ -415,7 +424,9 @@ impl TransformerModel {
                     p.name
                 )));
             }
-            if e.name != p.name || e.shape != p.shape || p.values.len() != p.shape.iter().product()
+            if e.name != p.name
+                || e.shape != p.shape
+                || p.values.len() != p.shape.iter().product::<usize>()
             {
                 return Err(TransformerError::Checkpoint(format!(
                     "parameter mismatch for {}",
