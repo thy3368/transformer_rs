@@ -1,7 +1,6 @@
 use super::CheckpointStore;
 use crate::core::entity::{
-    EOS_TOKEN, GenerationConfig, Text, TokenIds, Tokenizer, TransformerError, TransformerModel,
-    softmax,
+    GenerationConfig, Text, TokenIds, Tokenizer, TransformerError, TransformerModel, softmax,
 };
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -25,7 +24,8 @@ impl GenerateTextUseCase<'_> {
         }
         let model = TransformerModel::from_snapshot(snapshot)?;
         let mut ids = self.tokenizer.encode(&q.prompt, false)?.0;
-        ids.insert(0, crate::core::entity::BOS_TOKEN);
+        let tokenizer_config = self.tokenizer.config();
+        ids.insert(0, tokenizer_config.bos_token);
         let mut rng = StdRng::seed_from_u64(q.config.sampling.seed);
         for _ in 0..q.config.max_tokens {
             if ids.len() >= model.config().max_seq_len {
@@ -41,7 +41,7 @@ impl GenerateTextUseCase<'_> {
                 &mut rng,
             )? as u32;
             ids.push(next);
-            if next == EOS_TOKEN {
+            if next == tokenizer_config.eos_token {
                 break;
             }
         }

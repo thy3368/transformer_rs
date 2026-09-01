@@ -72,3 +72,14 @@ inference and evaluation rather than exact training resumption.
 There is no encoder, cross-attention, generic autograd, dropout, GPU backend,
 distributed execution, or beam search. Those remain outside the small
 training/checkpoint/evaluation/generation loop.
+# Tokenization
+
+The default command-line workflow uses the independent `bpe` workspace crate.
+It trains a whitespace-pretokenized BPE vocabulary containing `[UNK]`, `[BOS]`,
+`[EOS]`, and `[PAD]`. The application crate exposes a thin adapter implementing
+the core `Tokenizer` port, while the byte-level tokenizer remains available to
+library users.
+
+Checkpoint tokenizer metadata includes a length-delimited SHA-256 fingerprint
+of the raw vocabulary and merges files. Loading with different BPE files is
+therefore rejected before model evaluation or generation.
